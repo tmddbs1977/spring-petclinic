@@ -13,7 +13,7 @@ pipeline {
     // Git Clone
     stage('Git Clone') {
       steps {
-        git url: 'https://github.com/tmddbs1977/spring-petclinic.git/', branch: 'main'
+        git url: 'https://github.com/tmddbs1977/spring-petclinic.git', branch: 'main'
       }
     }
     //Maven을 이용해 Build 한다.
