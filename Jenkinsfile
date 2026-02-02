@@ -7,6 +7,7 @@ pipeline {
 
   environment {
     DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+    MY_KUBECONFIG = credentials('kubeconfig')
   }
 
   stages {
@@ -61,6 +62,14 @@ pipeline {
       steps {
         echo 'Docker Image Remove'
         sh 'docker rmi -f spring-petclinictest:$BUILD_NUMBER'
+      }
+    }
+    
+    // k8s deployment apply
+    stage('k8s deployment apply') {
+      steps {
+        echo 'k8s deployment apply'
+        sh("kubectl --kubeconfig $MY_KUBECONFIG get pods")
       }
     }
     
