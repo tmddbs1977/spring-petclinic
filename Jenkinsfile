@@ -68,9 +68,12 @@ pipeline {
     // k8s deployment apply
     stage('k8s deployment apply') {
       steps {
-        echo 'k8s deployment apply'
-        sh("kubectl --kubeconfig $MY_KUBECONFIG get pods")
-      }
+        withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+            sh '''
+                export KUBECONFIG=$KUBECONFIG_FILE
+                kubectl get pods
+            '''
+        }
     }
     
   }
