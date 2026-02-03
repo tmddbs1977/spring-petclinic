@@ -7,7 +7,7 @@ pipeline {
 
   environment {
     DOCKERHUB_CREDENTIALS = credentials('dockerhub')
-    MY_KUBECONFIG = credentials('kubeconfig')
+    K8S_CREDENTIALS = credentials('kubeconfig')
   }
 
   stages {
@@ -68,10 +68,15 @@ pipeline {
     // k8s deployment apply
     stage('k8s deployment apply') {
       steps {
-        withCredentials([file(credentialsId: 'kubeconfig', variable: 'MY_KUBECONFIG')]) {
+        echo 'k8s deployment apply'
+        withCredentials([file(credentialsId: 'kubeconfig', variable: 'K8S_CREDENTIALS')]) {
             sh '''
-                export KUBECONFIG=$MY_KUBECONFIG
-                kubectl get pods
+                export KUBECONFIG=$K8S_CREDENTIALS
+                kubectl apply -f petclinic-deployment1.yaml
+                kubectl apply -f petclinic-service1.yaml
+                kubectl apply -f petclinic-ingress.yaml
+                kubectl get pod -A
+                kubectl get deploy -A
             '''
         }
     }
