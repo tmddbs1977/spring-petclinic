@@ -39,8 +39,8 @@ pipeline {
         echo 'Docker Image Build'
         dir("${env.WORKSPACE}"){
           sh """
-          docker build -t spring-petclinictest:$BUILD_NUMBER .
-          docker tag spring-petclinictest:$BUILD_NUMBER tmddbs1977/spring-petclinictest:latest
+          docker build -t spring-petclinic2:$BUILD_NUMBER .
+          docker tag spring-petclinic2:$BUILD_NUMBER tmddbs1977/spring-petclinic2:latest
           """
         }
       }
@@ -52,7 +52,7 @@ pipeline {
         echo 'Docker Image Upload'
         sh """
            echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-           docker push tmddbs1977/spring-petclinictest:latest
+           docker push tmddbs1977/spring-petclinic2:latest
            """
       }
     }
@@ -61,16 +61,16 @@ pipeline {
     stage('Docker Image Remove') {
       steps {
         echo 'Docker Image Remove'
-        sh 'docker rmi -f spring-petclinictest:$BUILD_NUMBER'
+        sh 'docker rmi -f spring-petclinic2:$BUILD_NUMBER'
       }
     }
     
     // k8s deployment apply
     stage('k8s deployment apply') {
       steps {
-        withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+        withCredentials([file(credentialsId: 'kubeconfig', variable: 'MY_KUBECONFIG')]) {
             sh '''
-                export KUBECONFIG=$KUBECONFIG_FILE
+                export KUBECONFIG=$MY_KUBECONFIG
                 kubectl get pods
             '''
         }
