@@ -69,7 +69,6 @@ pipeline {
     stage('k8s deployment apply') {
       steps {
         echo 'k8s deployment apply'
-        sh 'cd /home/ubuntu/metallb/jenkins'
         withCredentials([file(credentialsId: 'kubeconfig', variable: 'K8S_CREDENTIALS')]) {
             sh '''
                 export KUBECONFIG=$K8S_CREDENTIALS
