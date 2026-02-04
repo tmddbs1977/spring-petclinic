@@ -11,6 +11,17 @@ pipeline {
   }
 
   stages {
+        stage('Show Workspace') {
+            steps {
+                script {
+                    echo "Current WORKSPACE path: ${env.WORKSPACE}"
+                }
+                sh 'pwd'
+                sh 'ls -al'
+            }
+        }
+
+  stages {
     // Git Clone
     stage('Git Clone') {
       steps {
