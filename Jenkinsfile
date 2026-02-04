@@ -61,7 +61,7 @@ pipeline {
     stage('Docker Image Remove') {
       steps {
         echo 'Docker Image Remove'
-        sh 'docker rmi -f spring-petclinic2:$BUILD_NUMBER'
+        sh 'docker rmi -f tmddbs1977/spring-petclinic2:$BUILD_NUMBER'
       }
     }
     
@@ -72,7 +72,8 @@ pipeline {
         withCredentials([file(credentialsId: 'kubeconfig', variable: 'K8S_CREDENTIALS')]) {
             sh '''
                 export KUBECONFIG=$K8S_CREDENTIALS
-                kubectl set image deployment/petclinic1 petclinic1=tmddbs1977/spring-petclinic2:$BUILD_NUMBER
+                sed -i "s/PLACEHOLDER/$BUILD_NUMBER/g" k8s/petclinic-deployment1.yaml
+                kubectl apply -f k8s/petclinic-deployment1.yaml
             '''
         }
     }
