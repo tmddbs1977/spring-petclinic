@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-service
+spec:
+  type: ClusterIP
+  selector:
+    app: petclinic2
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
