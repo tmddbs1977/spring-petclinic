@@ -40,7 +40,7 @@ pipeline {
         dir("${env.WORKSPACE}"){
           sh """
           docker build -t spring-petclinic2:$BUILD_NUMBER .
-          docker tag spring-petclinic2:$BUILD_NUMBER tmddbs1977/spring-petclinic2:latest
+          docker tag spring-petclinic2:$BUILD_NUMBER tmddbs1977/spring-petclinic2:$BUILD_NUMBER
           """
         }
       }
@@ -52,7 +52,7 @@ pipeline {
         echo 'Docker Image Upload'
         sh """
            echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-           docker push tmddbs1977/spring-petclinic2:latest
+           docker push tmddbs1977/spring-petclinic2:$BUILD_NUMBER
            """
       }
     }
@@ -72,11 +72,7 @@ pipeline {
         withCredentials([file(credentialsId: 'kubeconfig', variable: 'K8S_CREDENTIALS')]) {
             sh '''
                 export KUBECONFIG=$K8S_CREDENTIALS
-                kubectl apply -f k8s/petclinic-deployment1.yaml
-                kubectl apply -f k8s/petclinic-service1.yaml
-                kubectl apply -f k8s/ingress.yaml
-                kubectl get pod -A
-                kubectl get deploy -A
+                kubectl set image deployment/petclinic1 petclinic1=tmddbs1977/spring-petclinic2:$BUILD_NUMBER
             '''
         }
     }
