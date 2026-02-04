@@ -2,15 +2,25 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-main
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
   - http:
       paths:
-      - path: /
+      - path: /petclinic1
         pathType: Prefix
         backend:
           service:
-            name: petclinic-service
+            name: petclinic-service1
             port:
               number: 80
+      - path: /petclinic2
+        pathType: Prefix
+        backend:
+          service:
+            name: petclinic-service2
+            port:
+              number: 80
+
