@@ -72,7 +72,6 @@ pipeline {
         withCredentials([file(credentialsId: 'kubeconfig', variable: 'K8S_CREDENTIALS')]) {
             sh '''
                 export KUBECONFIG=$K8S_CREDENTIALS
-                kubectl apply -f k8s/petclinic-deployment2.yaml
                 kubectl apply -f k8s/petclinic-deployment1.yaml
                 kubectl apply -f k8s/petclinic-service1.yaml
                 kubectl apply -f k8s/ingress.yaml
