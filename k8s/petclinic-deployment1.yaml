@@ -15,5 +15,8 @@ spec:
       containers:
       - name: petclinic1
         image: tmddbs1977/spring-petclinic2:latest
+        env:
+        - name: SERVER_NAME
+          value: "WAS-A"
         ports:
-        - containerPort: 80
+        - containerPort: 8080
