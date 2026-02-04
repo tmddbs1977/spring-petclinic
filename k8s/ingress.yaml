@@ -11,17 +11,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: jenkins-service
-            port:
-              number: 80
-
-  - host: www.petclinic.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
             name: petclinic-service
             port:
               number: 80
