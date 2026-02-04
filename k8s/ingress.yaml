@@ -5,25 +5,12 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: www.502super.com
-    http:
+  - http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: petclinic-service1
+            name: petclinic-service
             port:
               number: 80
-              
-  - host: www.502super2.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: petclinic-service2
-            port:
-              number: 80
-
