@@ -22,8 +22,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 class WelcomeController {
 
+	@Value("${SERVER_NAME:DEFAULT-SERVER}")
+	private String serverName;
+
 	@GetMapping("/")
-	public String welcome() {
+	public String welcome(Model model) {
+		model.addAttribute("serverName", serverName);
 		return "welcome";
 	}
 
