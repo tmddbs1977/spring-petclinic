@@ -6,11 +6,11 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      app: petclinic1
+      app: petclinic
   template:
     metadata:
       labels:
-        app: petclinic1
+        app: petclinic
     spec:
       containers:
       - name: petclinic1
