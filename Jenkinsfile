@@ -20,6 +20,7 @@ pipeline {
                 sh 'ls -al'
             }
         }
+  }
 
   stages {
     // Git Clone
