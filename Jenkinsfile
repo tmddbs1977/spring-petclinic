@@ -2,12 +2,14 @@ pipeline {
   agent any
 
   tools {
-    jdk "JDK17"
+    maven "M3"
+    jdk "JDK21"
   }
 
   environment {
-    DOCKERHUB_CREDENTIALS = credentials('dockerhub')
-    K8S_CREDENTIALS = credentials('kubeconfig')
+    REGION = "ap-northeast-2"
+    DOCKERHUB_CREDENTIALS = credentials('DockerCredentials')
+    AWS_CREDENTIALS_NAME = credentials('AWSCredentials')
   }
 
   stages {
@@ -20,18 +22,19 @@ pipeline {
     //Maven을 이용해 Build 한다.
     stage('Maven Build') {
       steps {
-        sh 'chmod +x mvnw'
-        sh './mvnw clean package -DskipTests'
+        sh 'mvn -Dmaven.test.failure.ignore=true clean package'
       }
       post {
         success {
-          echo 'Maven Build Sucess'
+          echo 'Maven Build Success'
         }
         failure {
           echo 'Maven Build Failed'
         }
       }
     }
+
+    
     
     // Docker Image 생성
     stage('Docker Image Build') {
@@ -39,8 +42,8 @@ pipeline {
         echo 'Docker Image Build'
         dir("${env.WORKSPACE}"){
           sh """
-          docker build -t spring-petclinic2:$BUILD_NUMBER .
-          docker tag spring-petclinic2:$BUILD_NUMBER tmddbs1977/spring-petclinic2:$BUILD_NUMBER
+          docker build -t spring-petclinic:$BUILD_NUMBER .
+          docker tag spring-petclinic:$BUILD_NUMBER tmddbs1977/spring-petclinic:latest
           """
         }
       }
@@ -52,7 +55,7 @@ pipeline {
         echo 'Docker Image Upload'
         sh """
            echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-           docker push tmddbs1977/spring-petclinic2:$BUILD_NUMBER
+           docker push tmddbs1977/spring-petclinic:latest
            """
       }
     }
@@ -61,33 +64,45 @@ pipeline {
     stage('Docker Image Remove') {
       steps {
         echo 'Docker Image Remove'
-        sh 'docker rmi -f tmddbs1977/spring-petclinic2:$BUILD_NUMBER'
+        sh 'docker rmi -f tmddbs1977/spring-petclinic:$BUILD_NUMBER'
       }
     }
     
-    // k8s deployment apply
-    stage('k8s deployment apply') {
+    // Upload to S3
+    stage('Upload to S3') {
       steps {
-        echo 'k8s deployment apply'
-        withCredentials([file(credentialsId: 'kubeconfig', variable: 'K8S_CREDENTIALS')]) {
-            sh '''
-                export KUBECONFIG=$K8S_CREDENTIALS
-                sed -i "s/PLACEHOLDER/$BUILD_NUMBER/g" k8s/petclinic-deployment1.yaml
-                kubectl apply -f k8s/petclinic-deployment1.yaml
-            '''
+        echo 'Upload to S3'
+        dir ("$(env.WORKSPACE)") {
+          sh 'zip -r scripts.zip ./scripts appspec.yml'
+          withAWS(region:"${REGION}", credentials:"${AWS_CREDENTIALS_NAME}") {
+            s3Upload(file:"scripts.zip", bucket:"user02-codedeploy-bucket")
+          }
+          sh 'rm -rf ./scripts.zip'
         }
+      }
     }
-    }
+
     
-    stage('Show Workspace') {
-            steps {
-                script {
-                    echo "Current WORKSPACE path: ${env.WORKSPACE}"
-                }
-                sh 'pwd'
-                sh 'ls -al'
-            }
-        }
+     // Code Deploy
+    stage('Codedeploy Workload') {
+      steps {
+        sh '''
+           aws deploy create-deployment-group \
+           --application-name user02-code-deploy \
+           --auto-scaling-groups USER02-ASG-TARGET \
+           --deployment-group-name user02-code-deploy-${BUILD_NUMBER} \
+           --deployment-config-name CodeDeployDefault.OneAtATime \
+           --service-role-arn arn:aws:iam::491085389788:role/user02-code-deploy-service-role
+           '''
+        sh '''
+           aws deploy create-deployment --application-name user02-code-deploy \
+           --deployment-config-name CodeDeployDefault.OneAtATime \
+           --deployment-group-name user02-code-deploy-${BUILD_NUMBER} \
+           --s3-location bucket=user02-codedeploy-bucket,bundleType=zip,key=scripts.zip
+           '''
+        sleep(10) // sleep 10s
+      }
+    }
     
   }
 }
