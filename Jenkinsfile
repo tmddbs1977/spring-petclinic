@@ -86,6 +86,8 @@ pipeline {
      // Code Deploy
     stage('Codedeploy Workload') {
       steps {
+         withAWS(region:"${REGION}", credentials:"${AWS_CREDENTIALS_NAME}") {
+
         sh '''
            aws deploy create-deployment-group \
            --application-name user02-code-deploy \
@@ -101,6 +103,8 @@ pipeline {
            --s3-location bucket=user02-codedeploy-bucket,bundleType=zip,key=scripts.zip
            '''
         sleep(10) // sleep 10s
+           
+           }
       }
     }
     
