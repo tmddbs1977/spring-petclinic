@@ -7,6 +7,8 @@ pipeline {
   }
   environment {
     // 환경변수 지정
+    REGION = 'ap-northeast-2'
+    awsCredentials = 'awsCredentials'
     DOCKER_IMAGE_NAME = "spring-petclinic"
     DOCKER_API_VERSION = '1.43'
     COMPOSE_API_VERSION = '1.43'
