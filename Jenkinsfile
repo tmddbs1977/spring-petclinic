@@ -2,111 +2,88 @@ pipeline {
   agent any
 
   tools {
-    maven "M3"
-    jdk "JDK21"
+    jdk 'JDK21'
+    maven 'M3'
   }
-
   environment {
-    REGION = "ap-northeast-2"
-    DOCKERHUB_CREDENTIALS = credentials('DockerCredentials')
-    AWS_CREDENTIALS_NAME = "AWSCredentials"
+    // 환경변수 지정
+    DOCKER_IMAGE_NAME = "spring-petclinic"
+    DOCKER_API_VERSION = '1.43'
+    COMPOSE_API_VERSION = '1.43'
+
+    // Credentials
+    DOCKERHUB_CRED = credentials('dockerCredentials')
   }
 
   stages {
-    // Git Clone
     stage('Git Clone') {
       steps {
-        git url: 'https://github.com/tmddbs1977/spring-petclinic.git', branch: 'main'
+        git url: 'https://github.com/tmddbs1977/spring-petclinic.git', 
+        branch: 'main'
       }
     }
-    //Maven을 이용해 Build 한다.
     stage('Maven Build') {
       steps {
-        sh 'mvn -Dmaven.test.failure.ignore=true clean package'
+        echo 'Maven Build'
+        sh 'mvn clean package -Dmaven.test.failure.ignore=true'
+      }
+    }
+            
+    stage('Docker Build && Push') {
+      steps {
+        sh '''          
+          docker build -t ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER} .
+          docker tag ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER} tmddbs1977/${DOCKER_IMAGE_NAME}:latest
+          echo ${DOCKERHUB_CRED_PSW} | docker login -u ${DOCKERHUB_CRED_USR} --password-stdin
+          docker push tmddbs1977/${DOCKER_IMAGE_NAME}:latest
+        '''
       }
       post {
-        success {
-          echo 'Maven Build Success'
-        }
-        failure {
-          echo 'Maven Build Failed'
-        }
-      }
-    }
-
-    
-    
-    // Docker Image 생성
-    stage('Docker Image Build') {
-      steps {
-        echo 'Docker Image Build'
-        dir("${env.WORKSPACE}"){
-          sh """
-          docker build -t spring-petclinic:$BUILD_NUMBER .
-          docker tag spring-petclinic:$BUILD_NUMBER tmddbs1977/spring-petclinic:latest
-          """
+        always {
+          sh '''
+          docker rmi -f ${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}
+          docker rmi -f tmddbs1977/${DOCKER_IMAGE_NAME}:latest
+          '''
         }
       }
     }
-    
-    // Docker Image Upload
-    stage('Docker Image Upload') {
+    stage('Upload s3') {
       steps {
-        echo 'Docker Image Upload'
-        sh """
-           echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-           docker push tmddbs1977/spring-petclinic:latest
-           """
-      }
-    }
-
-    // Docker Image Remove
-    stage('Docker Image Remove') {
-      steps {
-        echo 'Docker Image Remove'
-        sh 'docker rmi -f spring-petclinic:$BUILD_NUMBER'
-      }
-    }
-    
-    // Upload to S3
-    stage('Upload to S3') {
-      steps {
-        echo 'Upload to S3'
-        dir ("${env.WORKSPACE}") {
-          sh 'zip -r scripts.zip ./scripts appspec.yml'
-          withAWS(region:"${REGION}", credentials:"${AWS_CREDENTIALS_NAME}") {
-            s3Upload(file:"scripts.zip", bucket:"user02-codedeploy-bucket")
+				echo "Upload to S3"
+        dir("${env.WORKSPACE}") {
+				  sh 'zip -r scripts.zip ./scripts appspec.yml'
+          withAWS(region:"${REGION}", credentials: "${awsCredentials}"){
+	          s3Upload(file:"scripts.zip", bucket:"user03-codedeploy-bucket")
           }
           sh 'rm -rf ./scripts.zip'
-        }
+				}
       }
     }
 
-    
-     // Code Deploy
-    stage('Codedeploy Workload') {
+    // CodeDeploy 애플리케이션은 미리 AWS 콘솔에서 생성되어 있어야 합니다.
+    stage('Codedeploy workload') {
       steps {
-         withAWS(region:"${REGION}", credentials:"${AWS_CREDENTIALS_NAME}") {
-
-        sh '''
-           aws deploy create-deployment-group \
-           --application-name user02-code-deploy \
-           --auto-scaling-groups USER02-ASG-TARGET \
-           --deployment-group-name user02-code-deploy-${BUILD_NUMBER} \
-           --deployment-config-name CodeDeployDefault.OneAtATime \
-           --service-role-arn arn:aws:iam::491085389788:role/user02-code-deploy-service-role
-           '''
-        sh '''
-           aws deploy create-deployment --application-name user02-code-deploy \
-           --deployment-config-name CodeDeployDefault.OneAtATime \
-           --deployment-group-name user02-code-deploy-${BUILD_NUMBER} \
-           --s3-location bucket=user02-codedeploy-bucket,bundleType=zip,key=scripts.zip
-           '''
-        sleep(10) // sleep 10s
-           
-           }
-      }
+				echo "create code-deploy group"
+				withAWS(region:"${REGION}", credentials: "${awsCredentials}") {      
+				  sh """
+			 	  aws deploy create-deployment-group \
+		  	  --application-name user02-code-deploy\
+		   	  --auto-scaling-groups user02-target-asg \
+			    --deployment-group-name user02-code-deploy-${BUILD_NUMBER} \
+	     	  --deployment-config-name CodeDeployDefault.OneAtATime \
+      	  --service-role-arn arn:aws:iam::491085389788:role/user02-codedeploy-service-role \
+				  """
+				  echo "codedeploy workload"
+				  sh """
+		   	  aws deploy create-deployment --application-name user02-code-deploy \
+      	  --deployment-config-name CodeDeployDefault.OneAtATime \
+				  --deployment-group-name user02-code-deploy-${BUILD_NUMBER} \
+				  --s3-location bucket=user02-codedeploy-bucket,bundleType=zip,key=scripts.zip
+       	  """
+				  sleep(10)
+				}
+      }    
     }
-    
+
   }
 }
