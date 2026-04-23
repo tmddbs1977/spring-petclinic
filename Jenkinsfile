@@ -8,7 +8,6 @@ pipeline {
   environment {
     // 환경변수 지정
     REGION = 'ap-northeast-2'
-    awsCredentials = 'awsCredentials'
     DOCKER_IMAGE_NAME = "spring-petclinic"
     DOCKER_API_VERSION = '1.43'
     COMPOSE_API_VERSION = '1.43'
@@ -54,7 +53,7 @@ pipeline {
 				echo "Upload to S3"
         dir("${env.WORKSPACE}") {
 				  sh 'zip -r scripts.zip ./scripts appspec.yml'
-          withAWS(region:"${REGION}", credentials: "${awsCredentials}"){
+          withAWS(region:"${REGION}"){
 	          s3Upload(file:"scripts.zip", bucket:"user02-codedeploy-bucket")
           }
           sh 'rm -rf ./scripts.zip'
@@ -66,7 +65,7 @@ pipeline {
     stage('Codedeploy workload') {
       steps {
 				echo "create code-deploy group"
-				withAWS(region:"${REGION}", credentials: "${awsCredentials}") {      
+				withAWS(region:"${REGION}") {      
 				  sh """
 			 	  aws deploy create-deployment-group \
 		  	  --application-name user02-code-deploy\
