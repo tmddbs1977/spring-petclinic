@@ -65,7 +65,7 @@ pipeline {
     stage('Codedeploy workload') {
       steps {
 				echo "create code-deploy group"
-				withAWS(region:"${REGION}" useInstanceProfile: true) {      
+				withAWS(region:"${REGION}", useInstanceProfile: true) {      
 				  sh """
 			 	  aws deploy create-deployment-group \
 		  	  --application-name user02-code-deploy\
