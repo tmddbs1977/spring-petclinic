@@ -70,7 +70,7 @@ pipeline {
 			 	  aws deploy create-deployment-group \
 		  	  --application-name user02-code-deploy\
 		   	  --auto-scaling-groups user02-app-asg \
-			    --deployment-group-name user02-code-deploy-${BUILD_NUMBER} \
+			    --deployment-group-name user02-code-deploy \
 	     	  --deployment-config-name CodeDeployDefault.OneAtATime \
       	  --service-role-arn arn:aws:iam::491085389788:role/user02-codedeploy-service-role \
 				  """
@@ -78,7 +78,7 @@ pipeline {
 				  sh """
 		   	  aws deploy create-deployment --application-name user02-code-deploy \
       	  --deployment-config-name CodeDeployDefault.OneAtATime \
-				  --deployment-group-name user02-code-deploy-${BUILD_NUMBER} \
+				  --deployment-group-name user02-code-deploy \
 				  --s3-location bucket=user02-codedeploy-bucket,bundleType=zip,key=scripts.zip
        	  """
 				  sleep(10)
