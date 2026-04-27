@@ -89,9 +89,7 @@ pipeline {
           --s3-location bucket=user02-codedeploy-bucket,bundleType=zip,key=scripts.zip
           """
           sleep(10)
-				}
-      }    
-    }
-
+      }
+    }    
   }
 }
