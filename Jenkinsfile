@@ -50,38 +50,45 @@ pipeline {
     }
     stage('Upload s3') {
       steps {
-				echo "Upload to S3"
-        dir("${env.WORKSPACE}") {
-				  sh 'zip -r scripts.zip ./scripts appspec.yml'
-          withAWS(region:"${REGION}"){
-	          s3Upload(file:"scripts.zip", bucket:"user02-codedeploy-bucket")
+        echo "Upload to S3"
+          dir("${env.WORKSPACE}") {
+              sh 'zip -r scripts.zip ./scripts appspec.yml'
+              withAWS(region:"${REGION}"){
+                  s3Upload(file:"scripts.zip", bucket:"user02-codedeploy-bucket")
+              }
+              sh 'rm -rf ./scripts.zip'
           }
-          sh 'rm -rf ./scripts.zip'
-				}
       }
     }
 
-    // CodeDeploy 애플리케이션은 미리 AWS 콘솔에서 생성되어 있어야 합니다.
+    // CodeDeploy 애플리케이션은 미리 AWS 콘솔에서 생성.
     stage('Codedeploy workload') {
       steps {
-				echo "create code-deploy group"
-				withAWS(region:"${REGION}") {      
-				  sh """
-			 	  aws deploy create-deployment-group \
-		  	  --application-name user02-code-deploy\
-		   	  --auto-scaling-groups user02-app-asg \
-			    --deployment-group-name user02-code-deploy-group \
-	     	  --deployment-config-name CodeDeployDefault.OneAtATime \
-      	  --service-role-arn arn:aws:iam::491085389788:role/user02-codedeploy-service-role \
-				  """
-				  echo "codedeploy workload"
-				  sh """
-		   	  aws deploy create-deployment --application-name user02-code-deploy \
-      	  --deployment-config-name CodeDeployDefault.OneAtATime \
-				  --deployment-group-name user02-code-deploy-group \
-				  --s3-location bucket=user02-codedeploy-bucket,bundleType=zip,key=scripts.zip
-       	  """
-				  sleep(10)
+          echo "Update/Create code-deploy group"
+          sh """
+          # 기존 배포 그룹이 있으면 업데이트, 없으면 생성
+          aws deploy create-deployment-group \
+          --application-name user02-code-deploy \
+          --auto-scaling-groups user02-app-asg \
+          --deployment-group-name user02-code-deploy-group \
+          --deployment-config-name CodeDeployDefault.OneAtATime \
+          --service-role-arn arn:aws:iam::491085389788:role/user02-codedeploy-service-role \
+          || aws deploy update-deployment-group \
+          --application-name user02-code-deploy \
+          --auto-scaling-groups user02-app-asg \
+          --current-deployment-group-name user02-code-deploy-group \
+          --service-role-arn arn:aws:iam::491085389788:role/user02-codedeploy-service-role
+          """
+          
+          echo "Executing deployment"
+          sh """
+          aws deploy create-deployment \
+          --application-name user02-code-deploy \
+          --deployment-config-name CodeDeployDefault.OneAtATime \
+          --deployment-group-name user02-code-deploy-group \
+          --s3-location bucket=user02-codedeploy-bucket,bundleType=zip,key=scripts.zip
+          """
+          sleep(10)
 				}
       }    
     }
