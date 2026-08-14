@@ -1,40 +1,18 @@
-- 프로젝트명
+# Spring PetClinic - CI/CD Application Repository
 
-Iac와 하이브리드 클라우드를 활용한 인프라 구축
+AWS IaC 및 CI/CD 프로젝트에서 배포 테스트용 애플리케이션으로 사용한 Spring PetClinic 기반 저장소입니다.
 
+원본 Spring PetClinic 애플리케이션에 프로젝트에서 사용한 CI/CD 및 배포 관련 파일을 추가하여 Jenkins, Docker Hub, AWS CodeDeploy 배포 테스트에 활용했습니다.
 
-- 프로젝트 목표
+## 프로젝트에서 사용한 주요 파일
 
-AWS 클라우드와 온프레미스를 VPN으로 연동하여 IaC를 이용한 인프라를 구축하고 Jenkins와 GitHub를 활용한 CI/CD 작업을 수행함으로써 IaC와 하이브리드 클라우드를 이용한 인프라 구축 프로젝트 수행 및 프로젝트 관리 능력을 함양하고자 함.
-  
+- `Jenkinsfile` : Jenkins CI/CD Pipeline
+- `Dockerfile` : Spring PetClinic Docker Image 생성
+- `appspec.yml` : AWS CodeDeploy 배포 정의
+- `scripts/` : Docker Compose 및 배포 실행 스크립트
 
-- 사용 기술
+## 관련 포트폴리오
 
-· AWS
-· Kubernetes
-· Docker
-· Jenkins
-· Ansible
+AWS 인프라 및 CI/CD 구성에 대한 상세 내용은 아래 포트폴리오 저장소에 정리했습니다.
 
-
-- 내 역할
-
-AWS 클라우드 및 온프레미스 인프라 구축
-
-
-- 실행 방법
-
-사용자가 깃허브를 업데이트하는것을 트리거로 젠킨스 배포 동작
-
-
-- 트러블슈팅
-
-문제 상황 :
-GitHub 코드 수정 → Jenkins 빌드 → Docker Hub Push까지 성공했으나, 운영 서버(EC2)에서는 계속 이전 버전의 화면이 출력됨.
-
-원인 분석 :
-Docker의 레이어 캐싱 latest 태그는 이름일 뿐이며, 로컬에 동일한 이름의 이미지가 있으면 Docker는 외부에서 새로 다운로드(Pull)하지 않고 로컬 이미지를 그대로 사용함.
-
-해결 방법 :
-배포 스크립트에 docker compose pull 명령어를 추가하여 배포 시마다 Docker Hub에서 최신 이미지를 강제로 가져오도록 수정.
-docker compose up -d --force-recreate 옵션을 통해 이미지 레이어 변화와 상관없이 컨테이너를 강제 재생성함.
+https://github.com/tmddbs1977/aws-iac-cicd-project
